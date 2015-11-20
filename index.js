@@ -9,7 +9,7 @@ function TransactionGroup(callback, opts) {
 
 	opts = opts || {};
 
-	self.interval = opts.interval || 30;
+	self.interval = opts.interval || 30000;
 	self.max = opts.max;
 
 	self.callback = callback;
