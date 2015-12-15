@@ -1,6 +1,6 @@
 {
   "name": "transaction-group",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Collect [optionally unique] objects over a period of time and then act on them",
   "main": "index.js",
   "devDependencies": {
