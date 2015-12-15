@@ -13,7 +13,8 @@ function TransactionGroup(callback, opts) {
 	self.max = opts.max;
 
 	self.callback = callback;
-
+	self.wait = (callback.length > 1) ? true : false;
+	self.waiting = false;
 	self.swap();
 }
 
@@ -57,8 +58,21 @@ TransactionGroup.prototype.add = function (item, index) {
 
 TransactionGroup.prototype.execute = function () {
 	var self = this;
+	
+	//if wait is not enabled (because there is no callback in the callback)
+	if (!self.wait) {
+		var items = self.swap();
 
-	var items = self.swap();
+		self.callback(items);
+	}
+	//if we are not currently waiting on a callback from a previous txg callback
+	else if (!self.waiting) {
+		items = self.swap();
 
-	self.callback(items);
+		self.waiting = true;
+
+		self.callback(items, function () {
+			self.waiting = false;
+		});
+	}
 };

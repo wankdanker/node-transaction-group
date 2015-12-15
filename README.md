@@ -31,7 +31,10 @@ api
 
 ### var txg = TXG(callback, opts);
 
-* callback(items) - [function] the function which will be called to process the transaction group
+* callback(items[, done]) - [function] the function which will be called to process the transaction group
+	* items - [aray] the array of items that are part of this txg
+	* done - [function] - optional function to call when you are done procesing a txg. If this is specified
+		in your callback signature then `callback` will not be called again until after you call `done`.
 * opts - 
 	* interval - the duration of time, in milliseconds to collect objects
 
