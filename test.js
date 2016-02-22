@@ -76,3 +76,42 @@ test('txg use with index and one-at-a-time', function (t) {
 		txg.add({ a : 4 }, 2);
 	}, 500);
 });
+
+test('txg use with index, one-at-a-time and timeout', function (t) {
+	t.plan(6);
+
+	var txg = TXG(function (items, cb) {
+		t.deepEqual(items, [
+			{ a : 2 }
+			, { a : 4 }
+		]);
+
+		if (count < 4) {
+			cb();
+		}
+	}, { interval : 250, timeout : 1000 });
+
+	txg.on('timeout', function (items) {
+		t.ok(true);
+
+		t.deepEqual(items, [
+			{ a : 2 }
+			, { a : 4 }
+		]);
+
+		t.end();
+	});
+
+	var count = 0;
+
+	var interval = setInterval(function () {
+		if (count++ == 3) {
+			clearInterval(interval);
+		}
+
+		txg.add({ a : 1 }, 1);
+		txg.add({ a : 2 }, 1);
+		txg.add({ a : 3 }, 2);
+		txg.add({ a : 4 }, 2);
+	}, 500);
+});

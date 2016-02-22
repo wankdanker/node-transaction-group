@@ -32,11 +32,16 @@ api
 ### var txg = TXG(callback, opts);
 
 * callback(items[, done]) - [function] the function which will be called to process the transaction group
-	* items - [aray] the array of items that are part of this txg
+	* items - [array] the array of items that are part of this txg
 	* done - [function] - optional function to call when you are done procesing a txg. If this is specified
 		in your callback signature then `callback` will not be called again until after you call `done`.
-* opts - 
-	* interval - the duration of time, in milliseconds to collect objects
+* opts - [object] options object
+	* interval - [integer] the duration of time, in milliseconds to collect objects
+	* timeout - [integer] the duration of time, in milliseconds to wait for your callback to finish
+		* requires a `done` function in your `callback`
+		* value for `timeout` must be greater than 0
+		* if `done()` is not called by `timeout` milliseconds then that transaction group will be
+			emitted on the timeout event and txg will process the next transaction group
 
 ### txg.add(item[, index])
 
@@ -45,6 +50,12 @@ api
 can be used to make sure that there is only one instance of an object waiting to be processed.
 If the item already exists in the current transaction group, then the most recent item will over-
 write the existing one.
+
+## events
+
+### txg.on('timeout', function (items) {});
+
+Called when timeout has elapsed if opts.timeout is specified and your callback function has a done() function
 
 license
 -------

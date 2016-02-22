@@ -1,3 +1,6 @@
+var EventEmitter = require('events').EventEmitter;
+var inherits = require('util').inherits;
+
 module.exports = TransactionGroup;
 
 function TransactionGroup(callback, opts) {
@@ -7,9 +10,12 @@ function TransactionGroup(callback, opts) {
 
 	var self = this;
 
+	EventEmitter.call(self);
+
 	opts = opts || {};
 
 	self.interval = opts.interval || 30000;
+	self.timeout = opts.timeout || 0;
 	self.max = opts.max;
 
 	self.callback = callback;
@@ -18,6 +24,8 @@ function TransactionGroup(callback, opts) {
 	self.swap();
 }
 
+inherits(TransactionGroup, EventEmitter);
+
 TransactionGroup.prototype.swap = function () {
 	self = this;
 
@@ -25,7 +33,8 @@ TransactionGroup.prototype.swap = function () {
 
 	self.index = {};
 	self.items = [];
-	self.timeout = null;
+	self.intervalTimeout = null;
+	self.timeoutTimeout = null;
 
 	return items;
 }
@@ -47,8 +56,8 @@ TransactionGroup.prototype.add = function (item, index) {
 
 	self.items.push(item);
 
-	if (!self.timeout) {
-		self.timeout = setTimeout(function () {
+	if (!self.intervalTimeout) {
+		self.intervalTimeout = setTimeout(function () {
 			self.execute();
 		}, self.interval);
 	}
@@ -71,8 +80,29 @@ TransactionGroup.prototype.execute = function () {
 
 		self.waiting = true;
 
+		//if we have a truthy timeout value then initialize a callback timeout
+		if (self.timeout) {
+			self.timeoutTimeout = setTimeout(function () {
+				//if we hit this then a timeout has expired and 
+				//we will just set waiting to false
+				self.timeoutTimeout = null;
+				self.waiting = false;
+
+				//emit a timeout event containing the items
+				//from the original transaction
+				self.emit('timeout', items);
+			}, self.timeout);
+		}
+
 		self.callback(items, function () {
 			self.waiting = false;
+
+			//if we have a timeout running then clear it
+			if (self.timeoutTimeout) {
+				clearTimeout(self.timeoutTimeout);
+
+				self.timeoutTimeout = null;
+			}
 		});
 	}
 };
