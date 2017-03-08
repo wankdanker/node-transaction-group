@@ -33,7 +33,6 @@ TransactionGroup.prototype.swap = function () {
 
 	self.index = {};
 	self.items = [];
-	self.intervalTimeout = null;
 	self.timeoutTimeout = null;
 
 	return items;
@@ -56,18 +55,30 @@ TransactionGroup.prototype.add = function (item, index) {
 
 	self.items.push(item);
 
-	if (!self.intervalTimeout) {
-		self.intervalTimeout = setTimeout(function () {
-			self.execute();
-		}, self.interval);
-	}
+	self.resetInterval();
 
 	return true;
 };
 
+TransactionGroup.prototype.resetInterval = function () {
+	var self = this;
+
+	if (!self.intervalTimeout) {
+		self.intervalTimeout = setTimeout(function () {
+			self.intervalTimeout = null;
+			self.execute();
+		}, self.interval);
+	}
+}
+
 TransactionGroup.prototype.execute = function () {
 	var self = this;
 	
+	//if there are no items then don't continue
+	if (!self.items.length) {
+		return;
+	}
+
 	//if wait is not enabled (because there is no callback in the callback)
 	if (!self.wait) {
 		var items = self.swap();
@@ -102,6 +113,14 @@ TransactionGroup.prototype.execute = function () {
 				clearTimeout(self.timeoutTimeout);
 
 				self.timeoutTimeout = null;
+			}
+
+			//if we have items but no timer is set that means
+			//that we previously (in time) expired the timer
+			//while processing a transaction group. So, we should
+			//execute the next transaction group right now.
+			if (self.items.length && !self.intervalTimeout) {
+				self.execute();
 			}
 		});
 	}
